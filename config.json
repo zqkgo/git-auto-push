@@ -1,0 +1,15 @@
+{
+    "interval": 10,
+    "repositories": [
+        {
+            "path": "/path/to/your/local/repository1",
+            "remote": "origin",
+            "branch": "main"
+        },
+        {
+            "path": "/path/to/your/local/repository2",
+            "remote": "origin",
+            "branch": "master"
+        }
+    ]
+}
