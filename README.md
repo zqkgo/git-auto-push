@@ -6,3 +6,5 @@ Auto commit and push to github repositories.
 2. customize `config.json`
 3. run `./run.sh`
 4. check log periodically `tail -f git-auto-push.log`
+
+Or you can download [the released binaries](https://github.com/zqkgo/git-auto-push/releases) directly.
