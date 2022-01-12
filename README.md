@@ -1,4 +1,4 @@
-Auto commit and push to github repositories.
+Automatically commit and push to github repositories.
 
 ## 🔨 How to use
 
