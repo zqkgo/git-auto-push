@@ -109,5 +109,5 @@ func autoPush(repos []Repository) {
 		return
 	}
 	s := strings.Join(success, "\n")
-	fmt.Printf("Successfully pushed repositories: \n %s", s)
+	fmt.Printf("Successfully pushed repositories: %s\n", s)
 }
