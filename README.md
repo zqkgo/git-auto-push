@@ -1,6 +1,6 @@
 Auto commit and push to github repositories.
 
-## How to use
+## 🔨 How to use
 
 1. `git clone https://github.com/zqkgo/git-auto-push`
 2. customize `config.json`
