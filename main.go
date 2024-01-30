@@ -20,34 +20,44 @@ type Repository struct {
 
 type Config struct {
 	Repositories []Repository `json:"repositories"`
-	Interval     int          `json:"interval"`
+	IntervalMs   int          `json:"interval_ms"`
 }
 
 func main() {
-	f, err := os.OpenFile("config.json", os.O_RDONLY, 0766)
+	c, err := parseConfig("config.json")
 	if err != nil {
-		log.Fatalf("failed to open config file, err: %+v\n", err)
+		log.Fatalf("failed to parse config, err: %v", err)
+		return
 	}
-	defer f.Close()
-
-	bs, err := io.ReadAll(f)
-	if err != nil {
-		log.Fatalf("failed to read config file, err: %+v\n", err)
-	}
-
-	var c Config
-	err = json.Unmarshal(bs, &c)
-	if err != nil {
-		log.Fatalf("failed to decode config file, err: %+v\n", err)
-	}
-	itvl, repos := c.Interval, c.Repositories
+	itvl, repos := c.IntervalMs, c.Repositories
 	if itvl == 0 {
 		itvl = 10
 	}
 	for {
 		autoPush(repos)
-		time.Sleep(time.Duration(itvl) * time.Second)
+		time.Sleep(time.Duration(itvl) * time.Millisecond)
 	}
+}
+
+func parseConfig(path string) (*Config, error) {
+	f, err := os.OpenFile(path, os.O_RDONLY, 0766)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open config file, err: %+v", err)
+	}
+	defer f.Close()
+
+	bs, err := io.ReadAll(f)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file, err: %+v", err)
+	}
+
+	var c Config
+	err = json.Unmarshal(bs, &c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode config file, err: %+v", err)
+	}
+
+	return &c, nil
 }
 
 func autoPush(repos []Repository) {

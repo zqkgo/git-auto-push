@@ -1,13 +1,8 @@
 {
-    "interval": 10,
+    "interval_ms": 10000,
     "repositories": [
         {
-            "path": "/path/to/your/local/repository1",
-            "remote": "origin",
-            "branch": "main"
-        },
-        {
-            "path": "/path/to/your/local/repository2",
+            "path": "/Users/zqk/apps/md",
             "remote": "origin",
             "branch": "master"
         }
