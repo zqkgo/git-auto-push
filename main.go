@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -15,7 +15,7 @@ import (
 type Repository struct {
 	Path   string `json:"path"`
 	Remote string `json:"remote"`
-	Branch string `json: "branch"`
+	Branch string `json:"branch"`
 }
 
 type Config struct {
@@ -30,7 +30,7 @@ func main() {
 	}
 	defer f.Close()
 
-	bs, err := ioutil.ReadAll(f)
+	bs, err := io.ReadAll(f)
 	if err != nil {
 		log.Fatalf("failed to read config file, err: %+v\n", err)
 	}
