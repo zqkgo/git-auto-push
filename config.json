@@ -2,9 +2,9 @@
     "interval_ms": 10000,
     "repositories": [
         {
-            "path": "/Users/zqk/apps/md",
+            "path": "/Users/zqk/apps/mydocs",
             "remote": "origin",
-            "branch": "master"
+            "branch": "main"
         }
     ]
 }
