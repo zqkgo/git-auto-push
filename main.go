@@ -13,9 +13,15 @@ import (
 )
 
 type Repository struct {
-	Path   string `json:"path"`
+	// Absolute path of local directory.
+	Path string `json:"path"`
+	// Name of remote repository which mostly is origin.
 	Remote string `json:"remote"`
+	// Name of remote target branch.
 	Branch string `json:"branch"`
+
+	// Absolute path of local files.
+	Files []string
 }
 
 type Config struct {
