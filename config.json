@@ -2,7 +2,7 @@
     "interval_ms": 10000,
     "repositories": [
         {
-            "path": "/Users/zqk/apps/mydocs",
+            "path": "/Users/zqk/apps/logseq",
             "remote": "origin",
             "branch": "main"
         }
