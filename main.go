@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -134,61 +135,46 @@ func syncGit(repo Repository) (ok bool) {
 		}
 	}()
 
-	cmd := exec.Command("git", "status")
+	cmd := exec.Command("git", "pull", repo.Remote, repo.Branch)
 	bs, err := cmd.Output()
-	if err != nil {
-		log.Printf("WARN: failed to run 'git status', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
-		return
-	}
-
-	// check if there are files need to be staged.
-	var stashed bool
-	if strings.Contains(string(bs), notStaged) {
-		cmd = exec.Command("git", "stash")
-		bs, err = cmd.Output()
-		if err != nil {
-			log.Printf("WARN: failed to run 'git stash', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
-			return
-		}
-		stashed = true
-	}
-
-	cmd = exec.Command("git", "pull", repo.Remote, repo.Branch)
-	bs, err = cmd.Output()
 	if err != nil {
 		log.Printf("WARN: failed to run 'git stash', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
 		return
 	}
 
-	// push local updated files.
-	if stashed {
-		cmd = exec.Command("git", "stash", "pop")
-		bs, err = cmd.Output()
-		if err != nil {
-			log.Printf("WARN: failed to run 'git stash', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
-			return
-		}
-		cmd = exec.Command("git", "add", ".")
-		bs, err = cmd.Output()
-		if err != nil {
-			log.Printf("WARN: failed to run 'git add', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
-			return
-		}
-
-		curTime := time.Now().Format("2006/01/02 15:04:05")
-		cmd = exec.Command("git", "commit", "-m", fmt.Sprintf("%s auto commit", curTime))
-		bs, err = cmd.Output()
-		if err != nil {
-			log.Printf("WARN: failed to run 'git commit', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
-			return
-		}
-
-		cmd = exec.Command("git", "push", repo.Remote, repo.Branch)
-		bs, err = cmd.Output()
-		if err != nil {
-			log.Printf("WARN: failed to run 'git push', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
-			return
-		}
+	cmd = exec.Command("git", "status")
+	bs, err = cmd.Output()
+	if err != nil {
+		log.Printf("WARN: failed to run 'git status', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
+		return
 	}
+	if !strings.Contains(string(bs), notStaged) {
+		err = errors.New("no change")
+		log.Println(err)
+		return
+	}
+
+	cmd = exec.Command("git", "add", ".")
+	bs, err = cmd.Output()
+	if err != nil {
+		log.Printf("WARN: failed to run 'git add', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
+		return
+	}
+
+	curTime := time.Now().Format("2006/01/02 15:04:05")
+	cmd = exec.Command("git", "commit", "-m", fmt.Sprintf("%s auto commit", curTime))
+	bs, err = cmd.Output()
+	if err != nil {
+		log.Printf("WARN: failed to run 'git commit', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
+		return
+	}
+
+	cmd = exec.Command("git", "push", repo.Remote, repo.Branch)
+	bs, err = cmd.Output()
+	if err != nil {
+		log.Printf("WARN: failed to run 'git push', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
+		return
+	}
+
 	return
 }
