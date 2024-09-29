@@ -36,6 +36,10 @@ var (
 	conf    = flag.String("conf", dfgConf, "-conf=/path/to/config.json")
 )
 
+func init() {
+	log.SetOutput(os.Stdout)
+}
+
 func main() {
 	flag.Parse()
 	if *conf == "" {
@@ -84,7 +88,7 @@ func autoSync(repos []Repository) {
 		log.Fatalf("failed to find current working dir, err: %+v\n", err)
 	}
 	oriDir := filepath.Dir(ex)
-	var success []string
+	var finished []string
 	for i := 0; i < len(repos); i++ {
 		repo := repos[i]
 		p := repo.Path
@@ -114,15 +118,18 @@ func autoSync(repos []Repository) {
 			continue
 		}
 
-		success = append(success, repo.Path)
+		finished = append(finished, repo.Path)
 	}
+
 	os.Chdir(oriDir)
-	if len(success) == 0 {
-		fmt.Println("No repository pushed")
+
+	if len(finished) == 0 {
+		log.Println("No repository pushed")
 		return
 	}
-	s := strings.Join(success, "\n")
-	fmt.Printf("Successfully pushed repositories: %s\n", s)
+
+	s := strings.Join(finished, "\n")
+	log.Printf("finish syncing repositories: %s\n", s)
 }
 
 var notStaged = "Changes not staged for commit"
@@ -138,16 +145,17 @@ func syncGit(repo Repository) (ok bool) {
 	cmd := exec.Command("git", "pull", repo.Remote, repo.Branch)
 	bs, err := cmd.Output()
 	if err != nil {
-		log.Printf("WARN: failed to run 'git stash', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
-		return
+		log.Printf("WARN: failed to run 'git stash', err: %+v, path: %s", err, repo.Path)
 	}
+	log.Printf("git pull: %s", string(bs))
 
 	cmd = exec.Command("git", "status")
 	bs, err = cmd.Output()
 	if err != nil {
-		log.Printf("WARN: failed to run 'git status', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
+		log.Printf("WARN: failed to run 'git status', err: %+v, path: %s", err, repo.Path)
 		return
 	}
+	log.Printf("git status: %s", string(bs))
 	if !strings.Contains(string(bs), notStaged) {
 		err = errors.New("no change")
 		log.Println(err)
@@ -175,6 +183,7 @@ func syncGit(repo Repository) (ok bool) {
 		log.Printf("WARN: failed to run 'git push', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
 		return
 	}
+	log.Printf("git push: %s", string(bs))
 
 	return
 }
