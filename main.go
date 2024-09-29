@@ -132,16 +132,12 @@ func autoSync(repos []Repository) {
 	log.Printf("finish syncing repositories: %s\n", s)
 }
 
-var notStaged = "Changes not staged for commit"
+var (
+	notStaged = "Changes not staged for commit"
+	untracked = "Untracked files"
+)
 
-func syncGit(repo Repository) (ok bool) {
-	var err error
-	defer func() {
-		if err == nil {
-			ok = true
-		}
-	}()
-
+func syncGit(repo Repository) bool {
 	cmd := exec.Command("git", "pull", repo.Remote, repo.Branch)
 	bs, err := cmd.Output()
 	if err != nil {
@@ -153,20 +149,20 @@ func syncGit(repo Repository) (ok bool) {
 	bs, err = cmd.Output()
 	if err != nil {
 		log.Printf("WARN: failed to run 'git status', err: %+v, path: %s", err, repo.Path)
-		return
+		return false
 	}
 	log.Printf("git status: %s", string(bs))
-	if !strings.Contains(string(bs), notStaged) {
+	if !needCommit(string(bs)) {
 		err = errors.New("no change")
 		log.Println(err)
-		return
+		return false
 	}
 
 	cmd = exec.Command("git", "add", ".")
 	bs, err = cmd.Output()
 	if err != nil {
 		log.Printf("WARN: failed to run 'git add', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
-		return
+		return false
 	}
 
 	curTime := time.Now().Format("2006/01/02 15:04:05")
@@ -174,16 +170,21 @@ func syncGit(repo Repository) (ok bool) {
 	bs, err = cmd.Output()
 	if err != nil {
 		log.Printf("WARN: failed to run 'git commit', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
-		return
+		return false
 	}
 
 	cmd = exec.Command("git", "push", repo.Remote, repo.Branch)
 	bs, err = cmd.Output()
 	if err != nil {
 		log.Printf("WARN: failed to run 'git push', err: %+v, path: %s, output: %s", err, repo.Path, string(bs))
-		return
+		return false
 	}
 	log.Printf("git push: %s", string(bs))
 
-	return
+	return true
+}
+
+func needCommit(msg string) bool {
+	return strings.Contains(msg, notStaged) ||
+		strings.Contains(msg, untracked)
 }
