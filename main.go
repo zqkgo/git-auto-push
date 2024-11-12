@@ -58,6 +58,7 @@ func main() {
 	for {
 		autoSync(repos)
 		time.Sleep(time.Duration(itvl) * time.Millisecond)
+		log.Println("start to sync")
 	}
 }
 
@@ -106,17 +107,20 @@ func autoSync(repos []Repository) {
 			log.Printf("WARN: %s is not a directors", repo.Path)
 			continue
 		}
+		log.Printf("%s is dir", p)
 		err = os.Chdir(p)
 		if err != nil {
 			log.Printf("WARN: failed to change working dir, err: %+v, path: %s", err, repo.Path)
 			continue
 		}
+		log.Printf("cwd changed to %s", p)
 
 		ok := syncGit(repo)
 		if !ok {
 			log.Printf("repo %+v not synced", repo)
 			continue
 		}
+		log.Printf("%+v synced to git", repo)
 
 		finished = append(finished, repo.Path)
 	}
@@ -139,14 +143,33 @@ var (
 
 func syncGit(repo Repository) bool {
 	cmd := exec.Command("git", "pull", repo.Remote, repo.Branch)
-	bs, err := cmd.Output()
-	if err != nil {
-		log.Printf("WARN: failed to run 'git stash', err: %+v, path: %s", err, repo.Path)
+	log.Println("run git pull and wait for output")
+
+	// For some reason, the process may stuck when execute git pull,
+	// here we run git pull in separate goroutine and wait for a max timeout.
+	pullDone := make(chan struct{}, 1)
+	go func() {
+		bs, err := cmd.Output()
+		if err != nil {
+			log.Printf("WARN: failed to run 'git pull', err: %+v, path: %s", err, repo.Path)
+		}
+		log.Printf("git pull: %s", string(bs))
+		pullDone <- struct{}{}
+	}()
+
+	maxWait := 30 * time.Second
+	waitDone := time.After(maxWait)
+	select {
+	case <-pullDone:
+		log.Print("finish git pull")
+	case <-waitDone:
+		err := cmd.Process.Kill().Error()
+		log.Printf("kill git process after %v waiting for pulling, err: %s", maxWait, err)
+		return false
 	}
-	log.Printf("git pull: %s", string(bs))
 
 	cmd = exec.Command("git", "status")
-	bs, err = cmd.Output()
+	bs, err := cmd.Output()
 	if err != nil {
 		log.Printf("WARN: failed to run 'git status', err: %+v, path: %s", err, repo.Path)
 		return false
