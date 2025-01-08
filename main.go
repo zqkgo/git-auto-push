@@ -163,8 +163,10 @@ func syncGit(repo Repository) bool {
 	case <-pullDone:
 		log.Print("finish git pull")
 	case <-waitDone:
-		err := cmd.Process.Kill().Error()
-		log.Printf("kill git process after %v waiting for pulling, err: %s", maxWait, err)
+		err := cmd.Process.Kill()
+		if err != nil {
+			log.Printf("kill git process after %v waiting for pulling, err: %s", maxWait, err.Error())
+		}
 		return false
 	}
 
